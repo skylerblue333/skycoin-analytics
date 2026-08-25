@@ -26,16 +26,11 @@ const MAX_DIMENSION_LENGTH = 128;
 
 /** In-memory deterministic analytics aggregation for bounded event batches. */
 export class AnalyticsAggregator {
-  private readonly events: Required<Pick<AnalyticsEvent, "name" | "timestamp">> & AnalyticsEvent[];
-
-  constructor() {
-    this.events = [] as unknown as Required<Pick<AnalyticsEvent, "name" | "timestamp">> & AnalyticsEvent[];
-  }
+  private readonly events: AnalyticsEvent[] = [];
 
   ingest(event: AnalyticsEvent): void {
     if (this.events.length >= MAX_EVENTS) throw new RangeError(`event limit of ${MAX_EVENTS} reached`);
-    const normalized = normalizeEvent(event);
-    (this.events as unknown as AnalyticsEvent[]).push(normalized);
+    this.events.push(normalizeEvent(event));
   }
 
   ingestBatch(events: AnalyticsEvent[]): void {
@@ -43,19 +38,18 @@ export class AnalyticsAggregator {
     if (this.events.length + events.length > MAX_EVENTS) {
       throw new RangeError(`event limit of ${MAX_EVENTS} reached`);
     }
-    const normalized = events.map(normalizeEvent);
-    (this.events as unknown as AnalyticsEvent[]).push(...normalized);
+    this.events.push(...events.map(normalizeEvent));
   }
 
   count(name?: string): number {
     if (name === undefined) return this.events.length;
     validateName(name);
-    return (this.events as unknown as AnalyticsEvent[]).filter((event) => event.name === name).length;
+    return this.events.filter((event) => event.name === name).length;
   }
 
   metric(name: string): MetricSummary {
     validateName(name);
-    const values = (this.events as unknown as AnalyticsEvent[])
+    const values = this.events
       .filter((event) => event.name === name && event.value !== undefined)
       .map((event) => event.value as number);
 
@@ -74,7 +68,7 @@ export class AnalyticsAggregator {
     validateName(name);
     validateDimensionKey(dimension);
     const counts = new Map<string, number>();
-    for (const event of this.events as unknown as AnalyticsEvent[]) {
+    for (const event of this.events) {
       if (event.name !== name) continue;
       const value = event.dimensions?.[dimension];
       if (value === undefined) continue;
@@ -89,14 +83,14 @@ export class AnalyticsAggregator {
   }
 
   snapshot(): AnalyticsEvent[] {
-    return (this.events as unknown as AnalyticsEvent[]).map((event) => ({
+    return this.events.map((event) => ({
       ...event,
       dimensions: event.dimensions ? { ...event.dimensions } : undefined,
     }));
   }
 
   reset(): void {
-    (this.events as unknown as AnalyticsEvent[]).length = 0;
+    this.events.length = 0;
   }
 }
 
