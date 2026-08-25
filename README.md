@@ -1,44 +1,55 @@
-<!-- PORTFOLIO PROJECT PROFILE: maintained by the repository owner -->
+# Sky Analytics Core
 
-## Project profile and code-audit snapshot
+A small deterministic TypeScript event-aggregation library for SKYCOIN4444 integrations and standalone engineering use.
 
-**What this is:** **skycoin-analytics** is a public repository described as: “Analytics Engine - Real-time dashboards, metrics #SkyCoin4444 #AI #Blockchain #DevOps #Innovation” Its dominant language signals are **TypeScript (8 files)**.
+**Status: engineering beta.** This repository does not claim a real-time distributed analytics platform, production dashboard, data warehouse, streaming system, or deployed observability service.
 
-**Why it has value:** Its value is best understood through the implementation evidence currently present in the repository: **27 tracked files** were observed in the shallow audit, with the source structure and existing documentation providing the project’s specific context. This README does not treat a prototype, experiment, or archive as a production system without supporting evidence.
+## Implemented behavior
 
-**Implementation evidence:** No test-related file was detected by filename heuristics.; 1 dependency or package manifest(s) detected; 3 build/CI/infrastructure signal(s) detected; and 3 documentation or governance file(s) detected. Test filenames observed include none detected. Dependency or package files include `package.json`. Build, CI, or infrastructure signals include `Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`.
+`AnalyticsAggregator` accepts bounded in-memory event batches with optional numeric values, timestamps, and string dimensions. It provides:
 
-**Current status:** The repository is tracked on the `main` branch. The existing source tree, configuration, tests, workflows, and documentation remain authoritative for supported behavior and maturity. A code audit is not a production-readiness certification, and the presence of a test or workflow file does not establish that all checks pass.
+- total and per-event counts
+- numeric count/sum/min/max/average summaries
+- per-dimension occurrence counts with deterministic ordering
+- defensive snapshot copies
+- input bounds and validation for names, dimensions, timestamps, and finite numeric values
+- reset semantics for deterministic tests and short-lived processing jobs
 
-**Relationship to the wider portfolio:** This repository is one focused component of the broader Skyler Blue Spillers portfolio across AI, software engineering, cloud and DevOps, cybersecurity, blockchain, finance, education, social systems, and creative work. It may provide a service boundary, implementation pattern, experiment, archive, or reusable idea for related repositories. Treat repositories as technical dependencies only where documented interfaces and verified project requirements support that relationship.
+```ts
+import { AnalyticsAggregator } from "skycoin4444-analytics-core";
 
-**Quality and security note:** No obvious secret-like pattern was detected by the limited static scan; this is not a substitute for a security audit. No TODO/FIXME marker was detected in the scanned text files.
+const analytics = new AnalyticsAggregator();
+analytics.ingest({
+  name: "purchase",
+  value: 42,
+  dimensions: { channel: "web" },
+});
 
----
+console.log(analytics.metric("purchase"));
+```
 
-# Skycoin Analytics
+## Verification
 
-![GitHub stars](https://img.shields.io/github/stars/skylerblue333/skycoin-analytics?style=flat-square)
-![GitHub license](https://img.shields.io/github/license/skylerblue333/skycoin-analytics?style=flat-square)
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm audit --audit-level=high
+pnpm pack
+```
 
-## 🌟 Overview
-**skycoin-analytics** is a professional-grade project within the **SkyCoin4444** ecosystem. It focuses on delivering high-value solutions in the domain of **TypeScript**.
+GitHub Actions performs real typecheck, tests, dependency audit, and package-smoke verification on Node.js 22. Previous scripts that simply echoed successful build/test/lint results were replaced because they did not verify the repository.
 
-## 🚀 Key Features
-- **Scalable Architecture**: Designed for enterprise-level growth and performance.
-- **Modern Standards**: Implements best practices for clean code and maintainability.
-- **Robust Integration**: Built to work seamlessly within modern cloud-native environments.
+There is intentionally no Docker runtime image: this product is currently a reusable library, not an HTTP analytics service.
 
-## 🛠️ Technology Stack
-- **Primary Domain**: TypeScript
-- **Ecosystem**: SkyCoin4444 Digital Platform
+## Scope and limitations
 
-## 📂 Structure
-The project is organized into a modular structure to ensure clarity and ease of development.
+Storage is in memory and capped at 100,000 events per aggregator instance. The package does not implement persistence, distributed processing, durable queues, ingestion authentication, PII governance, retention/deletion workflows, streaming windows, percentiles, approximate sketches, dashboards, alerting, or production deployment.
 
-## 👨‍💻 Author
-**Skyler Blue Spillers**
-*Professional Chess Player & Software Engineer*
+Historical AI/security experiment files remain in the repository for history but are excluded from the package build and are not part of the supported analytics API.
 
----
-*Powered by SkyCoin4444*
+For SKYCOIN4444, use this library behind a stable analytics adapter for deterministic local aggregation or tests. Larger telemetry/data workloads should use a purpose-built durable analytics pipeline instead of extending this in-memory component into a fake platform.
+
+## License
+
+MIT, subject to the checked-in license and applicable third-party licenses.
